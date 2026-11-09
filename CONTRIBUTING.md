@@ -17,6 +17,15 @@ Fikir / hata ──► Issue (triage) ──► Planlama (milestone) ──► D
 - Yeni issue'lar `ihtiyaç: triage` etiketiyle açılır. Bakımcı; tür, alan ve öncelik etiketlerini ekler,
   gerekiyorsa bir milestone'a bağlar.
 
+#### Bağımlılık güncellemeleri (Dependabot)
+Kuralın istisnası yoktur; Dependabot PR'ları da bir issue'ya bağlanır. Bu otomatik yapılır
+(`.github/workflows/dependabot-issue.yml` → `scripts/dependabot-issue.sh`):
+- Dependabot PR açınca `bakım` etiketli bir issue açılır ve PR açıklamasına `Closes #N` eklenir.
+- PR birleşince issue tamamlandı, birleşmeden kapanırsa "planlanmadı" olarak kapanır.
+- İş akışı `pull_request_target` ile çalışır ama PR'ın kodunu checkout etmez ve çalıştırmaz.
+
+Birleştirme kararı yine bakımcıdadır; Dependabot PR'ları otomatik birleştirilmez.
+
 ### 2. Hazır tanımı (Definition of Ready)
 Bir issue'ya başlanabilmesi için:
 - Problem ve beklenen sonuç açık,
