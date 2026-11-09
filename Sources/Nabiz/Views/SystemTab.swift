@@ -1,22 +1,12 @@
 import Charts
 import SwiftUI
 
-struct OverviewView: View {
+struct SystemTab: View {
     @Bindable var model: PanelModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Geçmiş").font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                Picker("Geçmiş", selection: $model.range) {
-                    ForEach(HistoryRange.allCases) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .controlSize(.small)
-                .frame(width: 170)
-            }
+            RangePicker(model: model)
             CPUSection(model: model)
             Divider()
             MemorySection(model: model)
@@ -174,79 +164,5 @@ private struct PressureLabel: View {
             }
         }
         .help("Çekirdeğin bildirdiği bellek baskısı seviyesi (kern.memorystatus_vm_pressure_level)")
-    }
-}
-
-// MARK: - Ortak parçalar
-
-private struct SectionHeader: View {
-    let title: String
-    let symbol: String
-    let value: String?
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Label(title, systemImage: symbol).font(.headline)
-            Spacer()
-            Text(value ?? "—").font(.title3.monospacedDigit().weight(.semibold))
-        }
-    }
-}
-
-private struct LegendDot: View {
-    let color: Color
-    let label: String
-
-    var body: some View {
-        HStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 8)
-            Text(label)
-        }
-        .font(.caption)
-        .foregroundStyle(.secondary)
-    }
-}
-
-private struct LegendValue: View {
-    let color: Color
-    let label: String
-    let value: UInt64
-
-    var body: some View {
-        HStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 8)
-            Text(label).foregroundStyle(.secondary)
-            Text(Fmt.bytes(value)).monospacedDigit()
-        }
-        .font(.caption)
-    }
-}
-
-struct HistoryChart: View {
-    let points: [ChartPoint]
-    let range: HistoryRange
-    let tint: Color
-
-    var body: some View {
-        let now = Date()
-        Chart(points) { point in
-            AreaMark(x: .value("Zaman", point.date), y: .value("Değer", point.value))
-                .foregroundStyle(tint.opacity(0.2))
-            LineMark(x: .value("Zaman", point.date), y: .value("Değer", point.value))
-                .foregroundStyle(tint)
-                .lineStyle(StrokeStyle(lineWidth: 1.2))
-        }
-        .chartXScale(domain: now.addingTimeInterval(-range.rawValue)...now)
-        .chartYScale(domain: 0...1)
-        .chartXAxis(.hidden)
-        .chartYAxis {
-            AxisMarks(position: .trailing, values: [0, 0.5, 1]) { value in
-                AxisGridLine()
-                AxisValueLabel {
-                    if let v = value.as(Double.self) { Text(Fmt.percent(v)) }
-                }
-            }
-        }
-        .frame(height: 64)
     }
 }

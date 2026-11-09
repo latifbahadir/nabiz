@@ -6,7 +6,9 @@
 Timer (2 sn, %25 tolerans)
    │
    ▼
-Monitor ── Samplers (CPU, Bellek, …) ── sistem çağrıları
+Monitor ── Samplers ── sistem çağrıları
+   │        sürekli (her tik): CPU, Bellek, Ağ, Disk G/Ç   (~65 µs toplam)
+   │        yalnızca panel açıkken: Pil, Disk doluluğu (10 sn'de bir), birincil arayüz
    │  ├─ RingBuffer<HistoryPoint>   (son 1 saat, bellekte)
    │  ├─ onTick ──► StatusBarController ──► menü çubuğu görüntüsü (yalnızca değer değişince)
    │  └─ panel açıksa ──► PanelModel (@Observable) ──► SwiftUI panel
@@ -43,5 +45,9 @@ Yeni bir metrik eklerken:
 - Menü çubuğu öğesi bir şablon görüntüdür; yalnızca metin değişince yeniden oluşturulur.
 - Panel kapalıyken SwiftUI'ye hiçbir değer yayınlanmaz ve görünüm ağacı yoktur.
 - Grafikler en fazla 180 noktaya indirgenir.
+- Pahalı çağrılar önbelleğe alınır: arayüz adları (`if_indextoname` içeride `getifaddrs` çağırır),
+  disk sürücü listesi (30 tikte bir yenilenir).
+- Birikimli sayaçlarda fark yalnızca iki okumada da bulunan anahtarlar için alınır; yeni takılan
+  disk/arayüz hızda sıçrama yaratmaz, sıfırlanan sayaç negatif değer üretmez.
 
 Karar gerekçeleri: [docs/adr](adr/).

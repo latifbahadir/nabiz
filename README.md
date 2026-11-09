@@ -12,9 +12,9 @@ hesaplama formülünü ve sistem araçlarıyla yan yana karşılaştırmayı gö
 |---|---|---|
 | İşlemci (toplam, çekirdek başına, çekirdek tipine göre) | `host_processor_info` | ✅ v0.1 |
 | Bellek (uygulama, sabit, sıkıştırılmış, önbellek, takas, baskı) | `host_statistics64`, `sysctl` | ✅ v0.1 |
-| Ağ hızı | `getifaddrs` | 🗓 v0.2 |
-| Disk doluluğu ve hızı | `statfs`, IOKit | 🗓 v0.2 |
-| Pil | IOKit `AppleSmartBattery` | 🗓 v0.2 |
+| Ağ hızı (indirme / yükleme) | `sysctl NET_RT_IFLIST2` (64 bit sayaçlar) | ✅ v0.2 |
+| Disk doluluğu ve okuma/yazma hızı | `URLResourceValues`, IOKit `IOBlockStorageDriver` | ✅ v0.2 |
+| Pil (yüzde, kalan süre, sağlık, döngü, güç, sıcaklık) | `IOPowerSources`, IOKit `AppleSmartBattery` | ✅ v0.2 |
 | GPU, sıcaklık, fan | IOKit / SMC (resmi olmayan) | 🗓 v0.3 |
 
 Yol haritası ve görevler: [Issues](../../issues) ve [Milestones](../../milestones).

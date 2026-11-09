@@ -4,6 +4,11 @@ struct HistoryPoint: Sendable {
     let date: Date
     let cpu: Double
     let memory: Double
+    /// bayt/sn
+    let download: Double
+    let upload: Double
+    let diskRead: Double
+    let diskWrite: Double
 }
 
 /// Sabit kapasiteli halka tampon: eski kayıtlar kendiliğinden düşer.
@@ -38,6 +43,8 @@ struct RingBuffer<Element> {
 /// - Panel kapalıyken yalnızca CPU/RAM sayaçları okunur ve menü metni
 ///   değiştiyse güncellenir; SwiftUI tarafına hiçbir şey gönderilmez.
 /// - Panel verisi yalnızca panel açıkken yayınlanır.
+/// - Ağ ve disk G/Ç sayaçları geçmiş grafiği için sürekli, pil ve disk doluluğu
+///   yalnızca panel açıkken okunur.
 @MainActor
 final class Monitor {
     static let interval: TimeInterval = 2
@@ -48,18 +55,27 @@ final class Monitor {
 
     private let cpuSampler = CPUSampler()
     private let memorySampler = MemorySampler()
+    private let networkSampler = NetworkSampler()
+    private let diskSampler = DiskSampler()
     private let selfSampler = SelfUsageSampler()
+    private var lastCapacityRead: TimeInterval = -.infinity
     private var history = RingBuffer<HistoryPoint>(capacity: historyCapacity)
     private var timer: Timer?
     private var panelVisible = false
 
     private(set) var latestCPU: CPUSnapshot?
     private(set) var latestMemory: MemorySnapshot?
+    private var latestNetwork: NetworkSnapshot?
+    private var latestDiskIO: DiskIOSnapshot?
     var onTick: (() -> Void)?
 
     init() {
         topology = CPUTopology.load()
-        panel = PanelModel(topology: topology, interval: Self.interval)
+        panel = PanelModel(
+            topology: topology,
+            interval: Self.interval,
+            hasBattery: BatterySampler.sample() != nil
+        )
     }
 
     func start() {
@@ -86,8 +102,18 @@ final class Monitor {
     private func tick() {
         latestCPU = cpuSampler.sample()
         latestMemory = memorySampler.sample()
+        latestNetwork = networkSampler.sample()
+        latestDiskIO = diskSampler.sampleIO()
         if let cpu = latestCPU, let memory = latestMemory {
-            history.append(HistoryPoint(date: Date(), cpu: cpu.total, memory: memory.usedFraction))
+            history.append(HistoryPoint(
+                date: Date(),
+                cpu: cpu.total,
+                memory: memory.usedFraction,
+                download: latestNetwork?.download ?? 0,
+                upload: latestNetwork?.upload ?? 0,
+                diskRead: latestDiskIO?.rate.readRate ?? 0,
+                diskWrite: latestDiskIO?.rate.writeRate ?? 0
+            ))
         }
         onTick?()
         if panelVisible { publish() }
@@ -97,6 +123,19 @@ final class Monitor {
         panel.cpu = latestCPU
         panel.memory = latestMemory
         panel.history = history.elements
+        panel.network = latestNetwork
+        panel.diskIO = latestDiskIO
         panel.selfUsage = selfSampler.sample()
+
+        // Panel açıkken bile pahalı sayılabilecek okumalar seyrek yapılır.
+        let now = ProcessInfo.processInfo.systemUptime
+        if now - lastCapacityRead >= 10 {
+            lastCapacityRead = now
+            panel.diskCapacity = DiskSampler.capacity()
+            panel.primaryInterface = networkSampler.primaryInterface()
+        }
+        if panel.hasBattery {
+            panel.battery = BatterySampler.sample()
+        }
     }
 }

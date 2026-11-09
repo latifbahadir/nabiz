@@ -5,6 +5,16 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
 
 ## [Yayınlanmamış]
 
+### Eklendi
+- Ağ: anlık indirme/yükleme hızı ve geçmiş grafiği; 64 bit arayüz sayaçları, VPN tünelleri çift sayılmaz (#2).
+- Disk: doluluk (Finder ile aynı "kullanılabilir" tanımı), okuma/yazma hızı ve geçmiş grafiği (#3).
+- Pil: yüzde, durum, kalan süre, sağlık, döngü sayısı, anlık güç ve sıcaklık (#4).
+- Panel sekmeleri: Sistem, Ağ · Disk, Pil, Doğrulama.
+- Doğrulama ekranına ağ, disk ve pil ham değerleri, formülleri ve karşılaştırma komutları.
+
+### Değişti
+- `--snapshot` bayrağı artık sekme adı alır: `system`, `io`, `battery`, `verify`.
+
 ## [0.1.0] - 2026-11-09
 
 ### Eklendi

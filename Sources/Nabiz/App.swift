@@ -21,11 +21,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let monitor = Monitor()
         self.monitor = monitor
 
-        // Geliştirme: `Nabiz --snapshot <dosya.png> [verify]` paneli dosyaya çizip çıkar.
+        // Geliştirme: `Nabiz --snapshot <dosya.png> [system|io|battery|verify]` paneli dosyaya çizip çıkar.
         let args = CommandLine.arguments
         if let i = args.firstIndex(of: "--snapshot"), i + 1 < args.count {
+            let tab: PanelTab = switch args.dropFirst(i + 2).first {
+            case "io": .io
+            case "battery": .battery
+            case "verify": .verify
+            default: .system
+            }
             monitor.start()
-            Snapshot.render(monitor: monitor, to: args[i + 1], verify: args.contains("verify"))
+            Snapshot.render(monitor: monitor, to: args[i + 1], tab: tab)
             return
         }
 
