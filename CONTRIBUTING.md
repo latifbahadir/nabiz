@@ -9,8 +9,11 @@ yayınlanabilir olsun.
 Fikir / hata ──► Issue (triage) ──► Planlama (milestone) ──► Dal ──► PR ──► CI + inceleme ──► Birleştirme ──► Sürüm
 ```
 
-### 1. Issue
-- Her iş bir issue ile başlar. Şablonları kullanın: **Hata bildirimi** veya **Özellik isteği**.
+### 1. Issue — issue yoksa iş yok
+- **Issue'su olmayan hiçbir kod, belge veya süreç değişikliği yapılmaz.** Küçük bir düzeltme bile önce issue olarak açılır.
+- Bir sohbette, toplantıda veya PR incelemesinde alınan her karar da **önce issue'ya dönüştürülür**
+  (karar, gerekçe, kabul kriterleri), geliştirme o issue üzerinden ilerler.
+- Şablonları kullanın: **Hata bildirimi** veya **Özellik isteği**.
 - Yeni issue'lar `ihtiyaç: triage` etiketiyle açılır. Bakımcı; tür, alan ve öncelik etiketlerini ekler,
   gerekiyorsa bir milestone'a bağlar.
 
@@ -25,11 +28,13 @@ Bir issue'ya başlanabilmesi için:
 
 | Tür | Dal adı |
 |---|---|
-| Yeni özellik | `feat/<kisa-ad>` |
-| Hata düzeltme | `fix/<kisa-ad>` |
-| Belgeler | `docs/<kisa-ad>` |
-| Bakım / CI | `chore/<kisa-ad>` |
-| Performans | `perf/<kisa-ad>` |
+| Yeni özellik | `feat/<issue>-<kisa-ad>` |
+| Hata düzeltme | `fix/<issue>-<kisa-ad>` |
+| Belgeler | `docs/<issue>-<kisa-ad>` |
+| Bakım / CI | `chore/<issue>-<kisa-ad>` |
+| Performans | `perf/<issue>-<kisa-ad>` |
+
+Örnek: `feat/5-giriste-baslat`. Dal adındaki numara, işin hangi issue'ya ait olduğunu gösterir.
 
 ### 4. Commit mesajları
 [Conventional Commits](https://www.conventionalcommits.org/tr/) biçimi:
@@ -41,6 +46,7 @@ fix(bellek): takas değerinin birimini düzelt
 
 ### 5. Pull request
 - PR şablonundaki kontrol listesini doldurun ve ilgili issue'yu bağlayın (`Closes #12`).
+  Bağlı issue'su olmayan PR birleştirilmez. Varsayılan: bir PR bir issue'yu kapatır.
 - CI (`build-and-test`) yeşil olmalı.
 - Tüm inceleme yorumları çözülmüş olmalı.
 - **Yalnızca bakımcı (@latifbahadir) birleştirebilir.** Birleştirme yöntemi: *squash merge*; dal otomatik silinir.

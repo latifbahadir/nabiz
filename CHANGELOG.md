@@ -13,6 +13,7 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
 - Doğrulama ekranına ağ, disk ve pil ham değerleri, formülleri ve karşılaştırma komutları.
 
 ### Değişti
+- Süreç: issue'su olmayan geliştirme yapılmaz; dal adları issue numarası içerir (#16).
 - `--snapshot` bayrağı artık sekme adı alır: `system`, `io`, `battery`, `verify`.
 
 ## [0.1.0] - 2026-11-09
