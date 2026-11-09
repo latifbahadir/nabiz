@@ -26,6 +26,7 @@ Panel kapanınca SwiftUI görünüm ağacı tamamen bırakılır
 | `Sources/Nabiz/PanelModel.swift` | Panelin gözlenen durumu |
 | `Sources/Nabiz/Samplers/` | Her metrik için bir örnekleyici; saf veri döndürür |
 | `Sources/Nabiz/Views/` | SwiftUI görünümleri |
+| `Sources/NabizUnofficial/` | Resmi olmayan API'ler için izolasyon katmanı (ayrı hedef): `dlsym`, CF tip denetimi, `UnofficialGate`, çökme koruması |
 | `Tests/NabizTests/` | Swift Testing ile birim ve sistem testleri |
 | `docs/adr/` | Mimari karar kayıtları |
 
@@ -38,6 +39,14 @@ Yeni bir metrik eklerken:
 4. Okunamayan değer uygulamayı çökertmez; `nil` döner ve arayüz "—" gösterir.
 5. Doğrulama ekranına kaynak, formül ve karşılaştırma komutu eklenir.
 6. Saf hesaplama mantığı için birim testi, gerçek sistem okuması için makullük testi yazılır.
+
+### Resmi olmayan kaynaklar ([ADR 0003](adr/0003-resmi-olmayan-api-izolasyonu.md))
+
+Belgelenmemiş anahtar veya özel sembol kullanan örnekleyiciler ayrıca:
+1. Kaynağa yalnızca `NabizUnofficial` yardımcılarıyla erişir; özel semboller `PrivateSymbol.resolve` ile çözülür, bağlanmaz.
+2. Değerleri `CFValue` ile tip denetleyerek okur; `as!` ve `!` kullanmaz.
+3. Her okumayı kendi `UnofficialGate`'inin `call` bloğunda yapar ve sonucu `report` ile bildirir.
+4. Kapının durumunu (`status`) Doğrulama ekranında gösterir.
 
 ## Düşük tüketim kararları
 
