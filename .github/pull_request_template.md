@@ -1,6 +1,6 @@
 ## Özet
 
-<!-- Ne değişti ve neden? -->
+<!-- Ne değişti ve neden? Issue'su olmayan değişiklik kabul edilmez. -->
 
 Closes #
 
@@ -12,6 +12,8 @@ Closes #
 - [ ] Belgeler / bakım
 
 ## Kontrol listesi (Bitti tanımı)
+
+- [ ] Bu PR bir issue'ya bağlı (`Closes #…`); issue'suz değişiklik yok
 
 - [ ] `swift test` geçiyor; yeni mantık için test eklendi
 - [ ] Yeni metrik için Doğrulama ekranında kaynak, formül ve karşılaştırma komutu var
