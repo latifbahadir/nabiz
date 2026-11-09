@@ -9,6 +9,8 @@ struct HistoryPoint: Sendable {
     let upload: Double
     let diskRead: Double
     let diskWrite: Double
+    /// 0…1; okunamadıysa nil (grafikte boşluk, sıfır değil).
+    var gpu: Double? = nil
 }
 
 /// Sabit kapasiteli halka tampon: eski kayıtlar kendiliğinden düşer.
@@ -43,7 +45,7 @@ struct RingBuffer<Element> {
 /// - Panel kapalıyken yalnızca CPU/RAM sayaçları okunur ve menü metni
 ///   değiştiyse güncellenir; SwiftUI tarafına hiçbir şey gönderilmez.
 /// - Panel verisi yalnızca panel açıkken yayınlanır.
-/// - Ağ ve disk G/Ç sayaçları geçmiş grafiği için sürekli, pil ve disk doluluğu
+/// - Ağ, disk G/Ç ve GPU (tek kayıt özelliği, ~20 µs) geçmiş grafiği için sürekli, pil ve disk doluluğu
 ///   yalnızca panel açıkken okunur.
 @MainActor
 final class Monitor {
@@ -57,6 +59,7 @@ final class Monitor {
     private let memorySampler = MemorySampler()
     private let networkSampler = NetworkSampler()
     private let diskSampler = DiskSampler()
+    private let gpuSampler = GPUSampler()
     private let selfSampler = SelfUsageSampler()
     private var lastCapacityRead: TimeInterval = -.infinity
     private var history = RingBuffer<HistoryPoint>(capacity: historyCapacity)
@@ -67,6 +70,7 @@ final class Monitor {
     private(set) var latestMemory: MemorySnapshot?
     private var latestNetwork: NetworkSnapshot?
     private var latestDiskIO: DiskIOSnapshot?
+    private var latestGPU: GPUSnapshot?
     var onTick: (() -> Void)?
 
     init() {
@@ -97,6 +101,12 @@ final class Monitor {
         }
     }
 
+    /// Çökme koruması nedeniyle kapanmış GPU kaynağını yeniden dener.
+    func retryGPU() {
+        gpuSampler.gate.retryAfterCrash()
+        panel.gpuStatus = gpuSampler.gate.status
+    }
+
     /// Doğrulama ekranı için: vm_stat'ı çalıştırır ve hemen ardından kendi ölçümünü alır.
     func compareWithVMStat() async -> (vmStat: [String: UInt64], ours: RawVMStats)? {
         guard let vmStat = await VMStat.run(), let ours = memorySampler.sample() else { return nil }
@@ -108,6 +118,8 @@ final class Monitor {
         latestMemory = memorySampler.sample()
         latestNetwork = networkSampler.sample()
         latestDiskIO = diskSampler.sampleIO()
+        // Ham değerler (string üretimi) yalnızca panel açıkken.
+        latestGPU = gpuSampler.sample(includeRaw: panelVisible)
         if let cpu = latestCPU, let memory = latestMemory {
             history.append(HistoryPoint(
                 date: Date(),
@@ -116,7 +128,8 @@ final class Monitor {
                 download: latestNetwork?.download ?? 0,
                 upload: latestNetwork?.upload ?? 0,
                 diskRead: latestDiskIO?.rate.readRate ?? 0,
-                diskWrite: latestDiskIO?.rate.writeRate ?? 0
+                diskWrite: latestDiskIO?.rate.writeRate ?? 0,
+                gpu: latestGPU?.device
             ))
         }
         onTick?()
@@ -129,6 +142,10 @@ final class Monitor {
         panel.history = history.elements
         panel.network = latestNetwork
         panel.diskIO = latestDiskIO
+        panel.gpu = latestGPU
+        panel.gpuInfo = gpuSampler.info
+        panel.gpuStatus = gpuSampler.gate.status
+        panel.gpuSourceTitle = gpuSampler.gate.title
         panel.selfUsage = selfSampler.sample()
 
         // Panel açıkken bile pahalı sayılabilecek okumalar seyrek yapılır.
