@@ -65,11 +65,11 @@ struct TemperatureTests {
         let suite = "nabiz-test-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        #expect(TemperatureSettings.load(defaults) == 60)
-        TemperatureSettings.save(5, defaults)
-        #expect(TemperatureSettings.load(defaults) == 5)
-        defaults.set(1, forKey: TemperatureSettings.defaultsKey)
-        #expect(TemperatureSettings.load(defaults) == 60)
+        #expect(SensorSettings.load(defaults) == 60)
+        SensorSettings.save(5, defaults)
+        #expect(SensorSettings.load(defaults) == 5)
+        defaults.set(1, forKey: SensorSettings.defaultsKey)
+        #expect(SensorSettings.load(defaults) == 60)
     }
 
     @Test("Gerçek sistem: SMC açılabiliyorsa Tp/Tg makul aralıkta")

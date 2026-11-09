@@ -11,7 +11,8 @@ struct SMCReading: Sendable, Hashable {
     let key: String
     let type: String
     let hex: String
-    let celsius: Double?
+    /// Tipine göre çözülmüş sayı (sıcaklıkta °C, fanda RPM).
+    let value: Double?
 }
 
 struct TemperatureSnapshot: Sendable {
@@ -53,9 +54,9 @@ enum TemperatureKeys {
     }
 }
 
-/// Sıcaklık okuma sıklığı (yalnızca panel açıkken). Varsayılan 60 sn.
-enum TemperatureSettings {
-    static let defaultsKey = "TemperatureInterval"
+/// SMC sensörlerinin (sıcaklık ve fan) okuma sıklığı; yalnızca panel açıkken. Varsayılan 60 sn.
+enum SensorSettings {
+    static let defaultsKey = "SensorInterval"
     static let choices: [Int] = [5, 15, 60]
     static let defaultInterval = 60
 
@@ -69,31 +70,54 @@ enum TemperatureSettings {
     }
 }
 
-/// SMC'den sıcaklık okur. SMC çağrıları ana iş parçacığını bekletmesin diye kendi seri
+/// Bir SMC okumasının sonucu: sıcaklık ve fan birlikte okunur (#8 kararı: aynı sıklık).
+struct SensorReading: Sendable {
+    let temperature: TemperatureSnapshot?
+    let temperatureStatus: UnofficialStatus
+    let fans: FanSnapshot?
+    let fanStatus: UnofficialStatus
+}
+
+/// SMC'den sıcaklık ve fan okur. SMC çağrıları ana iş parçacığını bekletmesin diye kendi seri
 /// kuyruğunda çalışır; ilk kullanımda anahtar listesi bir kez taranır (~0,7 sn, M5 Pro).
-final class TemperatureSampler: @unchecked Sendable {
+final class SMCSensorSampler: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.latifbahadir.nabiz.sensors", qos: .utility)
     // Aşağıdakiler yalnızca `queue` üzerinde kullanılır.
     private let gate = UnofficialGate(id: "smc-temperature", title: "AppleSMC → Tp* / Tg*")
     private let hidGate = UnofficialGate(id: "hid-temperature", title: "IOHIDEventSystemClient → sıcaklık servisleri")
+    private let fanGate = UnofficialGate(id: "smc-fan", title: "AppleSMC → FNum, F*Ac/Tg/Mn/Mx")
     private var client: SMCClient?
     private var keys: (cpu: [FourCC], gpu: [FourCC], other: [FourCC])?
 
     let sourceTitle = "AppleSMC → Tp* / Tg*"
     let hidSourceTitle = "IOHIDEventSystemClient → sıcaklık servisleri"
 
-    func sample(includeAll: Bool, completion: @escaping @MainActor (TemperatureSnapshot?, UnofficialStatus) -> Void) {
+    func sample(includeAll: Bool, completion: @escaping @MainActor (SensorReading) -> Void) {
         queue.async { [self] in
-            let result: Result<TemperatureSnapshot, Error>? = gate.call { Result { try read(includeAll: includeAll) } }
-            switch result {
-            case .success?: gate.report(.available)
-            case .failure(let error)?: gate.report(.unavailable(Self.describe(error)))
-            case nil: break
-            }
-            let snapshot = try? result?.get()
-            let status = gate.status
-            DispatchQueue.main.async { MainActor.assumeIsolated { completion(snapshot, status) } }
+            let temperature: Result<TemperatureSnapshot, Error>? = gate.call { Result { try read(includeAll: includeAll) } }
+            report(temperature, to: gate)
+            let fans: Result<FanSnapshot, Error>? = fanGate.call { Result { try FanReader.read(try connectedClient()) } }
+            report(fans, to: fanGate)
+            let reading = SensorReading(
+                temperature: try? temperature?.get(), temperatureStatus: gate.status,
+                fans: try? fans?.get(), fanStatus: fanGate.status
+            )
+            DispatchQueue.main.async { MainActor.assumeIsolated { completion(reading) } }
         }
+    }
+
+    private func report<T>(_ result: Result<T, Error>?, to gate: UnofficialGate) {
+        switch result {
+        case .success?: gate.report(.available)
+        case .failure(let error)?: gate.report(.unavailable(Self.describe(error)))
+        case nil: break
+        }
+    }
+
+    private func connectedClient() throws -> SMCClient {
+        let client = try self.client ?? SMCClient()
+        self.client = client
+        return client
     }
 
     func readHID(completion: @escaping @MainActor ([HIDTemperature.Reading]?, UnofficialStatus) -> Void) {
@@ -114,14 +138,14 @@ final class TemperatureSampler: @unchecked Sendable {
         queue.async { [self] in
             gate.retryAfterCrash()
             hidGate.retryAfterCrash()
+            fanGate.retryAfterCrash()
             let status = gate.status
             DispatchQueue.main.async { MainActor.assumeIsolated { completion(status) } }
         }
     }
 
     private func read(includeAll: Bool) throws -> TemperatureSnapshot {
-        let client = try self.client ?? SMCClient()
-        self.client = client
+        let client = try connectedClient()
         let keys = try self.keys ?? discover(client)
         self.keys = keys
         guard !keys.cpu.isEmpty || !keys.gpu.isEmpty else {
@@ -131,7 +155,7 @@ final class TemperatureSampler: @unchecked Sendable {
         func readings(_ list: [FourCC]) -> [SMCReading] {
             list.compactMap { key in
                 guard let value = try? client.read(key) else { return nil }
-                return SMCReading(key: key.description, type: value.type.description, hex: value.hex, celsius: value.number)
+                return SMCReading(key: key.description, type: value.type.description, hex: value.hex, value: value.number)
             }
         }
         let cpu = readings(keys.cpu)
@@ -139,8 +163,8 @@ final class TemperatureSampler: @unchecked Sendable {
         let other = includeAll ? readings(keys.other) : []
         return TemperatureSnapshot(
             date: Date(),
-            cpu: TemperatureSnapshot.stats(cpu.compactMap(\.celsius)),
-            gpu: TemperatureSnapshot.stats(gpu.compactMap(\.celsius)),
+            cpu: TemperatureSnapshot.stats(cpu.compactMap(\.value)),
+            gpu: TemperatureSnapshot.stats(gpu.compactMap(\.value)),
             readings: cpu + gpu + other,
             includesAll: includeAll
         )

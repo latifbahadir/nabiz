@@ -13,6 +13,10 @@ struct SystemTab: View {
             Divider()
             TemperatureSection(model: model)
             Divider()
+            if let fans = model.fans, !fans.fans.isEmpty {
+                FanSection(fans: fans)
+                Divider()
+            }
             MemorySection(model: model)
         }
     }
@@ -141,14 +145,14 @@ private struct TemperatureSection: View {
             HStack {
                 Text(ageText)
                 Spacer()
-                Picker("Okuma sıklığı", selection: $model.temperatureInterval) {
-                    ForEach(TemperatureSettings.choices, id: \.self) { Text("\($0) sn").tag($0) }
+                Picker("Okuma sıklığı", selection: $model.sensorInterval) {
+                    ForEach(SensorSettings.choices, id: \.self) { Text("\($0) sn").tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .controlSize(.mini)
                 .frame(width: 130)
-                .help("Sıcaklık yalnızca panel açıkken bu sıklıkla okunur")
+                .help("Sıcaklık ve fan yalnızca panel açıkken bu sıklıkla okunur")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -174,6 +178,37 @@ private struct TemperatureSection: View {
             Text(stats.map { "en yüksek \(Fmt.celsius($0.maximum))" } ?? "—").monospacedDigit()
             Text(stats.map { "ort. \(Fmt.celsius($0.average)) · \($0.count) sensör" } ?? "").monospacedDigit().foregroundStyle(.secondary)
         }
+    }
+}
+
+// MARK: - Fan
+
+private struct FanSection: View {
+    let fans: FanSnapshot
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SectionHeader(title: "Fanlar", symbol: "fan", value: headline)
+            ForEach(fans.fans) { fan in
+                HStack(spacing: 8) {
+                    Text("Fan \(fan.id + 1)").foregroundStyle(.secondary).frame(width: 42, alignment: .leading)
+                    FillBar(fraction: fan.fraction ?? 0, color: .teal)
+                    Text(detail(fan)).monospacedDigit().frame(width: 150, alignment: .trailing)
+                }
+                .font(.caption)
+            }
+        }
+    }
+
+    private var headline: String {
+        fans.fans.allSatisfy(\.isStopped) ? "Duruyor" : fans.fans.map { Fmt.integer(UInt64($0.actual.rounded())) }.joined(separator: " · ") + " RPM"
+    }
+
+    private func detail(_ fan: FanInfo) -> String {
+        if fan.isStopped { return "duruyor" }
+        let rpm = "\(Fmt.integer(UInt64(fan.actual.rounded()))) RPM"
+        guard let fraction = fan.fraction, let maximum = fan.maximum else { return rpm }
+        return "\(rpm) · \(Fmt.percent(fraction)) / \(Fmt.integer(UInt64(maximum.rounded())))"
     }
 }
 

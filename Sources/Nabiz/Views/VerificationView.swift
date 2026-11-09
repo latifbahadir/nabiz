@@ -23,6 +23,8 @@ struct VerificationView: View {
                 Divider()
                 temperature
                 Divider()
+                fans
+                Divider()
                 memory
                 Divider()
                 network
@@ -248,7 +250,7 @@ struct VerificationView: View {
     private var temperature: some View {
         VStack(alignment: .leading, spacing: 6) {
             Label("Sıcaklık — ham değerler", systemImage: "thermometer.medium").font(.headline)
-            Text("Kaynak: AppleSMC (belgelenmemiş anahtarlar, yalnızca okuma). CPU = Tp*, GPU = Tg* anahtarları; eşleme yük testiyle doğrulandı (CPU yükünde Tp, GPU yükünde Tg en çok yükselir). Yalnızca panel açıkken, \(model.temperatureInterval) sn'de bir okunur.")
+            Text("Kaynak: AppleSMC (belgelenmemiş anahtarlar, yalnızca okuma). CPU = Tp*, GPU = Tg* anahtarları; eşleme yük testiyle doğrulandı (CPU yükünde Tp, GPU yükünde Tg en çok yükselir). Yalnızca panel açıkken, \(model.sensorInterval) sn'de bir okunur.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
@@ -296,13 +298,40 @@ struct VerificationView: View {
         }
     }
 
+    // MARK: Fan
+
+    private var fans: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Fanlar — ham değerler", systemImage: "fan").font(.headline)
+            Text("Kaynak: AppleSMC (yalnızca okuma; fan denetimi yok). FNum = fan sayısı; her fan için F<n>Ac (anlık), F<n>Tg (hedef), F<n>Mn / F<n>Mx (en düşük / en yüksek) devir. Sıcaklıkla birlikte, \(model.sensorInterval) sn'de bir okunur.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            UnofficialStatusLabel(status: model.fanStatus)
+            if let snapshot = model.fans {
+                if snapshot.count == 0 {
+                    Text("Bu Mac'te fan yok (FNum = 0 ya da anahtar yok); Sistem sekmesinde bölüm gizlenir.").foregroundStyle(.secondary)
+                }
+                smcTable(snapshot.readings)
+                ForEach(snapshot.fans) { fan in
+                    if let maximum = fan.maximum, let fraction = fan.fraction {
+                        Text("Fan \(fan.id + 1): oran = F\(fan.id)Ac / F\(fan.id)Mx = \(Fmt.number(fan.actual, digits: 0)) / \(Fmt.number(maximum, digits: 0)) = \(Fmt.percent(fraction))")
+                            .monospacedDigit()
+                    }
+                }
+            }
+            Text("Apple Silicon'da fan devrini gösteren bir sistem aracı yok (powermetrics'te SMC örnekleyicisi, IORegistry'de fan bilgisi bulunmuyor). Tutarlılık denetimi: anlık devir hedef devri izler; uzun yükte artar, soğumada en düşüğe iner ya da fan durur (0).")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     private func smcTable(_ readings: [SMCReading]) -> some View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 2) {
             ForEach(readings, id: \.self) { r in
                 GridRow {
                     Text(r.key).font(.caption.monospaced())
                     Text("\(r.type) \(r.hex)").font(.caption.monospaced()).foregroundStyle(.secondary)
-                    Text(r.celsius.map { Fmt.celsius($0, digits: 2) } ?? "—").monospacedDigit()
+                    Text(r.value.map { r.key.hasPrefix("T") ? Fmt.celsius($0, digits: 2) : Fmt.number($0, digits: 0) } ?? "—").monospacedDigit()
                 }
             }
         }
