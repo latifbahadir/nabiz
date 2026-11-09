@@ -90,7 +90,11 @@ final class Monitor {
 
     func setPanelVisible(_ visible: Bool) {
         panelVisible = visible
-        if visible { publish() }
+        if visible {
+            // Kullanıcı Sistem Ayarları'ndan değiştirmiş olabilir; panel her açıldığında okunur.
+            panel.launchAtLogin = LaunchAtLogin.current()
+            publish()
+        }
     }
 
     /// Doğrulama ekranı için: vm_stat'ı çalıştırır ve hemen ardından kendi ölçümünü alır.

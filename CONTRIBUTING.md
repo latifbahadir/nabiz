@@ -84,6 +84,7 @@ swift build                    # derle
 swift test                     # test et
 ./scripts/build-app.sh         # .app paketini oluştur
 ./scripts/measure-self.sh 60   # kendi tüketimini ölç
+build/Nabız.app/Contents/MacOS/Nabiz --login-item status   # giriş öğesi durumu (on|off ile değiştirir)
 build/Nabız.app/Contents/MacOS/Nabiz --snapshot /tmp/panel.png [system|io|battery|verify]   # paneli PNG'ye çiz
 ```
 

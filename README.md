@@ -39,11 +39,17 @@ Ayrıntılar: [docs/PRODUCT.md](docs/PRODUCT.md) · [docs/ARCHITECTURE.md](docs/
 open "build/Nabız.app"
 ```
 
-Uygulamalar klasörüne kurmak için:
+### Kurulum ve girişte başlatma
+
+Günlük kullanım için Nabız'ı **Uygulamalar klasörüne kurun** ve oradan açın:
 
 ```bash
-./scripts/build-app.sh && ditto "build/Nabız.app" "/Applications/Nabız.app"
+./scripts/build-app.sh && ditto "build/Nabız.app" "/Applications/Nabız.app" && open "/Applications/Nabız.app"
 ```
+
+Ardından paneldeki **Girişte başlat** anahtarını açın. Giriş öğesi uygulamanın o an çalıştığı konumu
+kaydeder; `build/` klasöründen çalışan bir kopya için açarsanız Nabız sizi uyarır. Öğe
+*Sistem Ayarları > Genel > Giriş Öğeleri* altında görünür; macOS onay isterse panel sizi oraya yönlendirir.
 
 > Menü çubuğu çok doluysa (özellikle çentikli ekranlarda) yeni öğeler çentiğin arkasında kalabilir.
 > ⌘ tuşuna basılı tutup diğer öğeleri sürükleyerek yer açabilirsiniz.

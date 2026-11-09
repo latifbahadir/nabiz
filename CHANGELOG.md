@@ -11,6 +11,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
 - Pil: yüzde, durum, kalan süre, sağlık, döngü sayısı, anlık güç ve sıcaklık (#4).
 - Panel sekmeleri: Sistem, Ağ · Disk, Pil, Doğrulama.
 - Doğrulama ekranına ağ, disk ve pil ham değerleri, formülleri ve karşılaştırma komutları.
+- Girişte otomatik başlatma (`SMAppService`); /Applications dışından çalışırken ve onay gerektiğinde uyarı (#5).
+- Geliştirme için `--login-item status|on|off` bayrağı.
 
 ### Değişti
 - Süreç: issue'su olmayan geliştirme yapılmaz; dal adları issue numarası içerir (#16).

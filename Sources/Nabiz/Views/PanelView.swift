@@ -31,6 +31,8 @@ struct PanelView: View {
 
             Divider()
 
+            LaunchAtLoginRow(model: model)
+
             HStack {
                 Text("Her \(Int(model.interval)) saniyede bir ölçülüyor")
                     .font(.caption)
@@ -42,5 +44,32 @@ struct PanelView: View {
         }
         .padding(14)
         .frame(width: 360)
+    }
+}
+
+private struct LaunchAtLoginRow: View {
+    let model: PanelModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle("Girişte başlat", isOn: Binding(
+                get: { model.launchAtLogin.enabled },
+                set: { model.launchAtLogin = LaunchAtLogin.set($0) }
+            ))
+            .toggleStyle(.switch)
+            .controlSize(.small)
+
+            if let message = model.launchAtLogin.message {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
+                    Text(message).fixedSize(horizontal: false, vertical: true)
+                    if model.launchAtLogin.needsApproval {
+                        Button("Aç") { LaunchAtLogin.openLoginItemsSettings() }
+                            .controlSize(.mini)
+                    }
+                }
+                .font(.caption)
+            }
+        }
     }
 }
