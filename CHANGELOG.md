@@ -5,6 +5,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
 
 ## [Yayınlanmamış]
 
+## [0.2.0] - 2026-11-09
+
 ### Eklendi
 - Ağ: anlık indirme/yükleme hızı ve geçmiş grafiği; 64 bit arayüz sayaçları, VPN tünelleri çift sayılmaz (#2).
 - Disk: doluluk (Finder ile aynı "kullanılabilir" tanımı), okuma/yazma hızı ve geçmiş grafiği (#3).
@@ -19,7 +21,7 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
 - Süreç: Dependabot PR'ları için issue otomatik açılır ve PR'a bağlanır (#18).
 - `--snapshot` bayrağı artık sekme adı alır: `system`, `io`, `battery`, `verify`.
 
-## [0.1.0] - 2026-11-09
+## [0.1.0] - 2026-11-09 (etiketlenmedi)
 
 ### Eklendi
 - Menü çubuğunda iki satırlık CPU / RAM göstergesi ve açılır panel.
@@ -29,5 +31,6 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
 - Doğrulama ekranı: Nabız'ın kendi tüketimi, ham CPU tick'leri ve formül, `vm_stat` ile yan yana karşılaştırma.
 - Geliştirme için `--snapshot` bayrağı, `measure-self.sh` performans ölçüm betiği.
 
-[Yayınlanmamış]: https://github.com/latifbahadir/nabiz/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/latifbahadir/nabiz/releases/tag/v0.1.0
+[Yayınlanmamış]: https://github.com/latifbahadir/nabiz/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/latifbahadir/nabiz/releases/tag/v0.2.0
+[0.1.0]: https://github.com/latifbahadir/nabiz/commit/8289d3b
