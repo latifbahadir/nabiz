@@ -44,6 +44,8 @@ final class PanelModel {
     var diskCapacity: DiskCapacity?
     var battery: BatterySnapshot?
 
+    var launchAtLogin = LaunchAtLogin.State(enabled: false, message: nil, needsApproval: false)
+
     var tab: PanelTab = .system
     var range: HistoryRange = .fiveMinutes
 

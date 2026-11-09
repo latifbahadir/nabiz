@@ -35,6 +35,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        // Geliştirme: `Nabiz --login-item status|on|off` giriş öğesi durumunu yazdırıp çıkar.
+        if let i = args.firstIndex(of: "--login-item") {
+            let state: LaunchAtLogin.State = switch args.dropFirst(i + 1).first {
+            case "on": LaunchAtLogin.set(true)
+            case "off": LaunchAtLogin.set(false)
+            default: LaunchAtLogin.current()
+            }
+            print("girişte başlat: \(state.enabled ? "açık" : "kapalı")" + (state.message.map { " — \($0)" } ?? ""))
+            NSApp.terminate(nil)
+            return
+        }
+
         statusBar = StatusBarController(monitor: monitor)
         monitor.start()
     }
