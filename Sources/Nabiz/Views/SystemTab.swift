@@ -9,6 +9,8 @@ struct SystemTab: View {
             RangePicker(model: model)
             CPUSection(model: model)
             Divider()
+            GPUSection(model: model)
+            Divider()
             MemorySection(model: model)
         }
     }
@@ -77,6 +79,39 @@ private struct CoreBar: View {
         }
         .frame(height: 26)
         .help("Çekirdek \(id): \(load.map { Fmt.percent($0.total) } ?? "—")")
+    }
+}
+
+// MARK: - GPU
+
+private struct GPUSection: View {
+    let model: PanelModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SectionHeader(title: "GPU", symbol: "square.stack.3d.up", value: model.gpu.map { Fmt.percent($0.device) })
+
+            if let gpu = model.gpu {
+                Text(details(gpu))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if case .unavailable = model.gpuStatus {
+                Label("Okunamadı — ayrıntı Doğrulama sekmesinde", systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HistoryChart(points: model.chartPoints(\.gpu), range: model.range, tint: .purple)
+        }
+    }
+
+    private func details(_ gpu: GPUSnapshot) -> String {
+        var parts: [String] = []
+        if let renderer = gpu.renderer { parts.append("İşleyici \(Fmt.percent(renderer))") }
+        if let tiler = gpu.tiler { parts.append("Döşeyici \(Fmt.percent(tiler))") }
+        if let memory = gpu.inUseMemory { parts.append("Bellek \(Fmt.bytes(memory))") }
+        if let cores = model.gpuInfo?.coreCount { parts.append("\(cores) çekirdek") }
+        return parts.joined(separator: " · ")
     }
 }
 

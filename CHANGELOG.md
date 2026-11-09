@@ -10,6 +10,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
   CF tip denetimi, ilk çağrıda çökme koruması ve tüm kaynakları kapatma anahtarı
   (`defaults write com.latifbahadir.nabiz DisableUnofficialAPIs -bool YES`) (#24).
 - ADR 0003: resmi olmayan API kullanım kararı ve riskleri (#24).
+- GPU: kullanım (`IOAccelerator` → `Device Utilization %`), işleyici/döşeyici oranları, GPU belleği ve geçmiş grafiği;
+  Doğrulama ekranında ham sözlük, kaynak durumu ve `ioreg`/`powermetrics` karşılaştırması (#6).
 
 ## [0.2.0] - 2026-11-09
 

@@ -1,4 +1,5 @@
 import AppKit
+import NabizUnofficial
 import SwiftUI
 
 /// Nabız'ın değerlerinin nereden geldiğini ve nasıl hesaplandığını gösterir;
@@ -17,6 +18,8 @@ struct VerificationView: View {
                 selfUsage
                 Divider()
                 cpu
+                Divider()
+                gpu
                 Divider()
                 memory
                 Divider()
@@ -188,6 +191,56 @@ struct VerificationView: View {
         }
     }
 
+    // MARK: GPU
+
+    private var gpu: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("GPU — ham değerler", systemImage: "square.stack.3d.up").font(.headline)
+            Text("Kaynak: IOKit \(model.gpuSourceTitle) (belgelenmemiş anahtarlar). Sürücü değeri bir önceki okumadan bu yana geçen süre için hesaplar; Nabız her \(Int(model.interval)) sn'de bir okur.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Anlamı: GPU donanımının aktif kaldığı süre (powermetrics “GPU HW active residency” ile aynı eğilim). Uygulamaların GPU'da iş yaptığı süreden yüksek olabilir: kısa iş patlamalarından sonra GPU bir süre aktif kalır.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                UnofficialStatusLabel(status: model.gpuStatus)
+                if case .unavailable(let reason) = model.gpuStatus, reason.contains("önceki çalıştırmada") {
+                    Button("Yeniden dene") { monitor.retryGPU() }.controlSize(.mini)
+                }
+            }
+            if let info = model.gpuInfo {
+                Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 3) {
+                    InfoRow("Model", info.model ?? "—")
+                    InfoRow("Çekirdek (gpu-core-count)", info.coreCount.map(String.init) ?? "—")
+                    InfoRow("Sürücü sınıfı", info.ioClass ?? "—")
+                }
+            }
+            if let gpu = model.gpu {
+                if gpu.raw.isEmpty {
+                    Text("Ham değerler bir sonraki ölçümde gelecek…").foregroundStyle(.secondary)
+                } else {
+                    Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 3) {
+                        ForEach(gpu.raw, id: \.self) { item in
+                            InfoRow(item.key, item.value)
+                        }
+                    }
+                }
+                Text("Kullanım = “\(GPUSnapshot.deviceKey)” / 100 = \(Fmt.percent(gpu.device))")
+                    .monospacedDigit()
+            }
+            CommandRow(
+                note: "Aynı sözlük. Dikkat: pencere tüm okuyucular için ortaktır; ioreg okuyunca Nabız'ın bir sonraki değeri yalnızca aradaki kısa süreyi kapsar:",
+                command: #"ioreg -rc IOAccelerator -d1 | grep PerformanceStatistics"#
+            )
+            CommandRow(
+                note: "Bağımsız karşılaştırma (yönetici parolası ister; “GPU HW active residency” satırı; M5 Pro'da sürücü değeri genelde 0–12 puan yukarıda):",
+                command: "sudo powermetrics --samplers gpu_power -i 2000 -n 3"
+            )
+            Text("Activity Monitor → Pencere → GPU Geçmişi de aynı eğilimi göstermelidir.")
+                .foregroundStyle(.secondary)
+        }
+    }
+
     // MARK: Bellek
 
     private var memory: some View {
@@ -254,6 +307,24 @@ struct VerificationView: View {
     private func diffText(_ ours: UInt64, _ theirs: UInt64) -> String {
         let diff = Int64(bitPattern: ours) - Int64(bitPattern: theirs)
         return diff == 0 ? "0" : (diff > 0 ? "+" : "−") + Fmt.integer(UInt64(abs(diff)))
+    }
+}
+
+/// Resmi olmayan bir kaynağın durumu (ADR 0003).
+private struct UnofficialStatusLabel: View {
+    let status: UnofficialStatus
+
+    var body: some View {
+        let (symbol, color): (String, Color) = switch status {
+        case .available: ("checkmark.circle.fill", .green)
+        case .unavailable: ("xmark.octagon.fill", .red)
+        case .unknown: ("clock", .secondary)
+        }
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Image(systemName: symbol).foregroundStyle(color)
+            Text("Resmi olmayan kaynak · \(status.label)")
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 

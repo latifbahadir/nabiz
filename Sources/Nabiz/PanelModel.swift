@@ -1,4 +1,5 @@
 import Foundation
+import NabizUnofficial
 import Observation
 
 enum PanelTab: Hashable {
@@ -43,6 +44,10 @@ final class PanelModel {
     var diskIO: DiskIOSnapshot?
     var diskCapacity: DiskCapacity?
     var battery: BatterySnapshot?
+    var gpu: GPUSnapshot?
+    var gpuInfo: GPUInfo?
+    var gpuStatus: UnofficialStatus = .unknown
+    var gpuSourceTitle = ""
 
     var launchAtLogin = LaunchAtLogin.State(enabled: false, message: nil, needsApproval: false)
 
@@ -62,6 +67,15 @@ final class PanelModel {
         let points = history
             .filter { $0.date >= start }
             .map { ChartPoint(date: $0.date, value: $0[keyPath: value]) }
+        return Self.downsample(points, maxPoints: maxPoints)
+    }
+
+    /// İsteğe bağlı değerler için: okunamayan noktalar grafiğe girmez (sıfır olarak çizilmez).
+    func chartPoints(_ value: KeyPath<HistoryPoint, Double?>, maxPoints: Int = 180) -> [ChartPoint] {
+        let start = Date().addingTimeInterval(-range.rawValue)
+        let points = history
+            .filter { $0.date >= start }
+            .compactMap { point in point[keyPath: value].map { ChartPoint(date: point.date, value: $0) } }
         return Self.downsample(points, maxPoints: maxPoints)
     }
 
