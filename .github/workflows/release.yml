@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sürüm etiketi Info.plist ile uyumlu mu
+        run: |
+          plist_version="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Support/Info.plist)"
+          if [[ "v${plist_version}" != "${GITHUB_REF_NAME}" ]]; then
+            echo "Etiket ${GITHUB_REF_NAME}, Info.plist ${plist_version}: uyuşmuyor" >&2
+            exit 1
+          fi
+      - name: Test
+        run: swift test
+      - name: Derle ve paketle
+        run: |
+          ./scripts/build-app.sh
+          ditto -c -k --keepParent "build/Nabız.app" "Nabiz-${GITHUB_REF_NAME}.zip"
+          shasum -a 256 "Nabiz-${GITHUB_REF_NAME}.zip" > "Nabiz-${GITHUB_REF_NAME}.zip.sha256"
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "Nabiz-${GITHUB_REF_NAME}.zip" "Nabiz-${GITHUB_REF_NAME}.zip.sha256" \
+            --title "Nabız ${GITHUB_REF_NAME}" \
+            --generate-notes

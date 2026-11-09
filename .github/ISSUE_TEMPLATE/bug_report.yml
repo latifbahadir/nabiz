@@ -1,0 +1,40 @@
+name: Hata bildirimi
+description: Yanlış bir değer, çökme veya beklenmeyen davranış bildirin.
+title: "fix: "
+labels: ["bug", "ihtiyaç: triage"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Ne oldu?
+      description: Gördüğünüz davranış ve beklediğiniz davranış.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Yeniden üretme adımları
+      placeholder: |
+        1. Paneli aç
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: compare
+    attributes:
+      label: Karşılaştırma (yanlış değer ise)
+      description: Nabız'ın gösterdiği değer ve aynı anda sistem aracının (Activity Monitor, top, vm_stat, iostat…) gösterdiği değer.
+  - type: input
+    id: version
+    attributes:
+      label: Nabız sürümü
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: mac
+    attributes:
+      label: Mac modeli ve macOS sürümü
+      placeholder: "MacBook Pro M5 Pro, macOS 26.6"
+    validations:
+      required: true

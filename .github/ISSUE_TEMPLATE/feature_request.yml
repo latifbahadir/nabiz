@@ -1,0 +1,29 @@
+name: Özellik isteği
+description: Yeni bir metrik veya iyileştirme önerin.
+title: "feat: "
+labels: ["enhancement", "ihtiyaç: triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / ihtiyaç
+      description: Hangi sorunu çözüyor? Neden gerekli?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Önerilen çözüm
+  - type: textarea
+    id: source
+    attributes:
+      label: Veri kaynağı ve doğrulama
+      description: Değer hangi sistem API'sinden okunur ve hangi araçla karşılaştırılarak doğrulanır?
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Kabul kriterleri
+      placeholder: |
+        - [ ] …
+    validations:
+      required: true
