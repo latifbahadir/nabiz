@@ -48,6 +48,13 @@ final class PanelModel {
     var gpuInfo: GPUInfo?
     var gpuStatus: UnofficialStatus = .unknown
     var gpuSourceTitle = ""
+    var temperature: TemperatureSnapshot?
+    var temperatureStatus: UnofficialStatus = .unknown
+    var temperatureInterval = TemperatureSettings.load() {
+        didSet { TemperatureSettings.save(temperatureInterval) }
+    }
+    var hidTemperatures: [HIDTemperature.Reading]?
+    var hidStatus: UnofficialStatus = .unknown
 
     var launchAtLogin = LaunchAtLogin.State(enabled: false, message: nil, needsApproval: false)
 

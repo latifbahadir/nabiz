@@ -44,6 +44,11 @@ enum Fmt {
         return number(value / 1e6, digits: 0) + " MB"
     }
 
+    /// 43.25 → "43,3 °C"
+    static func celsius(_ value: Double, digits: Int = 1) -> String {
+        number(value, digits: digits) + " °C"
+    }
+
     /// 571 → "9 sa 31 dk", 45 → "45 dk"
     static func duration(minutes: Int) -> String {
         let hours = minutes / 60

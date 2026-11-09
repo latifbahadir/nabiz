@@ -8,7 +8,8 @@ Timer (2 sn, %25 tolerans)
    ▼
 Monitor ── Samplers ── sistem çağrıları
    │        sürekli (her tik): CPU, Bellek, Ağ, Disk G/Ç, GPU   (~85 µs toplam)
-   │        yalnızca panel açıkken: Pil, Disk doluluğu (10 sn'de bir), birincil arayüz
+   │        yalnızca panel açıkken: Pil, Disk doluluğu (10 sn'de bir), birincil arayüz,
+   │                                Sıcaklık (SMC, ayrı seri kuyrukta, varsayılan 60 sn'de bir)
    │  ├─ RingBuffer<HistoryPoint>   (son 1 saat, bellekte)
    │  ├─ onTick ──► StatusBarController ──► menü çubuğu görüntüsü (yalnızca değer değişince)
    │  └─ panel açıksa ──► PanelModel (@Observable) ──► SwiftUI panel

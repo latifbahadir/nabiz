@@ -21,6 +21,8 @@ struct VerificationView: View {
                 Divider()
                 gpu
                 Divider()
+                temperature
+                Divider()
                 memory
                 Divider()
                 network
@@ -239,6 +241,75 @@ struct VerificationView: View {
             Text("Activity Monitor → Pencere → GPU Geçmişi de aynı eğilimi göstermelidir.")
                 .foregroundStyle(.secondary)
         }
+    }
+
+    // MARK: Sıcaklık
+
+    private var temperature: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Sıcaklık — ham değerler", systemImage: "thermometer.medium").font(.headline)
+            Text("Kaynak: AppleSMC (belgelenmemiş anahtarlar, yalnızca okuma). CPU = Tp*, GPU = Tg* anahtarları; eşleme yük testiyle doğrulandı (CPU yükünde Tp, GPU yükünde Tg en çok yükselir). Yalnızca panel açıkken, \(model.temperatureInterval) sn'de bir okunur.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                UnofficialStatusLabel(status: model.temperatureStatus)
+                if case .unavailable(let reason) = model.temperatureStatus, reason.contains("önceki çalıştırmada") {
+                    Button("Yeniden dene") { monitor.retryTemperature() }.controlSize(.mini)
+                }
+            }
+            if let t = model.temperature {
+                let cpu = t.readings.filter { $0.key.hasPrefix(TemperatureKeys.cpuPrefix) }
+                let gpu = t.readings.filter { $0.key.hasPrefix(TemperatureKeys.gpuPrefix) }
+                let other = t.readings.filter { !$0.key.hasPrefix(TemperatureKeys.cpuPrefix) && !$0.key.hasPrefix(TemperatureKeys.gpuPrefix) }
+                Text("Ortalama / en yüksek = geçerli değerlerin (0 < °C < 150) ortalaması / en büyüğü\nCPU: \(statsText(t.cpu)) · GPU: \(statsText(t.gpu))")
+                    .monospacedDigit()
+                    .fixedSize(horizontal: false, vertical: true)
+                DisclosureGroup("CPU anahtarları (Tp*, \(cpu.count))") { smcTable(cpu) }
+                DisclosureGroup("GPU anahtarları (Tg*, \(gpu.count))") { smcTable(gpu) }
+                if t.includesAll {
+                    DisclosureGroup("Diğer T* anahtarları (\(other.count); anlamları belgelenmemiş, gösterime katılmaz)") { smcTable(other) }
+                }
+            }
+
+            Divider().padding(.vertical, 2)
+            Text("Çapraz kontrol: bağımsız ikinci kaynak IOHIDEventSystemClient (özel API). M5 Pro'da küme adı vermez (PMU tdie*); değerler Tp*/Tg* ile aynı aralıkta olmalıdır. Pahalıdır (~0,1 sn), yalnızca istenince okunur.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                Button("HID sensörlerini oku") { monitor.readHIDTemperatures() }.controlSize(.small)
+                if model.hidStatus != .unknown { UnofficialStatusLabel(status: model.hidStatus) }
+            }
+            if let hid = model.hidTemperatures {
+                let valid = hid.filter { TemperatureSnapshot.isPlausible($0.celsius) }
+                let dies = valid.filter { $0.name.hasPrefix("PMU tdie") }
+                Text("PMU tdie*: \(statsText(TemperatureSnapshot.stats(dies.map(\.celsius)))) · \(hid.count) servis, \(hid.count - valid.count) geçersiz değer (ör. PMU tdev ≈ −9201)")
+                    .monospacedDigit()
+                    .fixedSize(horizontal: false, vertical: true)
+                DisclosureGroup("HID servisleri (\(hid.count))") {
+                    Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 2) {
+                        ForEach(Array(hid.sorted { $0.name < $1.name }.enumerated()), id: \.offset) { _, reading in
+                            InfoRow(reading.name, Fmt.celsius(reading.celsius, digits: 2))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func smcTable(_ readings: [SMCReading]) -> some View {
+        Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 2) {
+            ForEach(readings, id: \.self) { r in
+                GridRow {
+                    Text(r.key).font(.caption.monospaced())
+                    Text("\(r.type) \(r.hex)").font(.caption.monospaced()).foregroundStyle(.secondary)
+                    Text(r.celsius.map { Fmt.celsius($0, digits: 2) } ?? "—").monospacedDigit()
+                }
+            }
+        }
+    }
+
+    private func statsText(_ stats: TemperatureStats?) -> String {
+        stats.map { "\(Fmt.celsius($0.average)) / \(Fmt.celsius($0.maximum)) (\($0.count))" } ?? "—"
     }
 
     // MARK: Bellek

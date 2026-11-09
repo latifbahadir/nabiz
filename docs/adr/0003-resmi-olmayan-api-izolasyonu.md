@@ -12,7 +12,8 @@ Apple Silicon'da bu değerlerin bilinen kaynakları:
 | Metrik | Kaynak | Niteliği |
 |---|---|---|
 | GPU kullanımı | IOKit `IOAccelerator` → `PerformanceStatistics` sözlüğü (`Device Utilization %` vb.) | Resmi IOKit çağrıları, **belgelenmemiş anahtarlar** |
-| Sıcaklık | `IOHIDEventSystemClient` (`IOHIDEventSystemClientCreate`, `…SetMatching`, `IOHIDServiceClientCopyEvent`, `IOHIDEventGetFloatValue`) | **Özel semboller** (başlık dosyası yok) |
+| Sıcaklık | `AppleSMC` `Tp*` (CPU) / `Tg*` (GPU) `flt` anahtarları — #7'de güncellendi, aşağıya bakın | Resmi IOKit çağrıları, **belgelenmemiş anahtarlar** |
+| Sıcaklık (çapraz kontrol) | `IOHIDEventSystemClient` (`IOHIDEventSystemClientCreate`, `…SetMatching`, `IOHIDServiceClientCopyEvent`, `IOHIDEventGetFloatValue`) | **Özel semboller** (başlık dosyası yok) |
 | Fan | `AppleSMC` kullanıcı istemcisi (`IOServiceOpen` + `IOConnectCallStructMethod`, `FNum`/`F0Ac`/`F0Mn`/`F0Mx` anahtarları) | Resmi IOKit çağrıları, **belgelenmemiş yapı ve anahtarlar** |
 
 Riskler:
@@ -41,9 +42,21 @@ aşağıdaki kurallarla:
      nedenini gösterir. İşaret macOS derlemesini ve Nabız sürümünü taşır; biri değişince kaynak yeniden denenir.
 4. **Şeffaflık:** Her kaynağın durumu (`kullanılabilir` / `okunamadı: neden`) ve ham değerleri Doğrulama ekranında
    gösterilir; kullanıcı değeri bir sistem aracıyla karşılaştırabilir (`ioreg`, `powermetrics`, Activity Monitor).
-5. **Maliyet:** Sıcaklık ve fan yalnızca panel açıkken okunur. GPU, geçmiş grafiği için sürekli okunabilir; ancak
+5. **Maliyet:** Sıcaklık ve fan yalnızca panel açıkken okunur (sıcaklık varsayılan 60 sn'de bir, değiştirilebilir). GPU, geçmiş grafiği için sürekli okunabilir; ancak
    yalnızca ölçülen maliyeti bütçeye sığarsa (#6'daki karar).
-6. **Yalnızca okuma:** Fan denetimi, SMC'ye yazma ve yönetici (root) yetkisi gerektiren hiçbir şey yapılmaz.
+6. **Yalnızca okuma:** Fan denetimi, SMC'ye yazma (yazma komutu hiç gönderilmez) ve yönetici (root) yetkisi gerektiren hiçbir şey yapılmaz.
+
+### Ek (#7, 2026-11-09): sıcaklık kaynağı HID yerine SMC
+
+M5 Pro / macOS 26.6'da HID sıcaklık servisleri küme adı vermiyor (yalnızca `PMU tdie1…14` ×3, geçersiz
+`PMU tdev*` ≈ −9201 °C, sabit `PMU tcal`) ve 77 servisi okumak ~97 ms sürüyor. SMC'de `Tp*` (23) ve `Tg*` (42)
+anahtarları var; yük testinde CPU yükü `Tp`'yi, GPU yükü `Tg`'yi en çok yükseltti. Bu yüzden:
+- Gösterilen CPU/GPU sıcaklıkları SMC `Tp*`/`Tg*` anahtarlarından (geçerli değerlerin ortalaması ve en yükseği).
+- HID yalnızca Doğrulama ekranında, düğmeyle, bağımsız çapraz kontrol olarak okunur.
+- Anahtar eşlemesi bir sonraki çipte değişebilir: `Tp*`/`Tg*` bulunamazsa bölüm "okunamadı" olur; yeni çipte
+  eşleme aynı yük testiyle yeniden doğrulanır.
+- SMC çağrıları ana iş parçacığında değil, kendi seri kuyruğunda yapılır (ilk anahtar taraması ~0,7 sn).
+- SMC alışveriş yapısının düzeni (80 bayt) her açılışta denetlenir; tutmazsa hiçbir çağrı yapılmaz.
 
 ## Değerlendirilen alternatifler
 

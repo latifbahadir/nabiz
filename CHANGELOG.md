@@ -12,6 +12,8 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
 - ADR 0003: resmi olmayan API kullanım kararı ve riskleri (#24).
 - GPU: kullanım (`IOAccelerator` → `Device Utilization %`), işleyici/döşeyici oranları, GPU belleği ve geçmiş grafiği;
   Doğrulama ekranında ham sözlük, kaynak durumu ve `ioreg`/`powermetrics` karşılaştırması (#6).
+- Sıcaklık: CPU (`Tp*`) ve GPU (`Tg*`) ortalama / en yüksek, SMC'den; yalnızca panel açıkken, sıklık seçilebilir
+  (5 / 15 / 60 sn, varsayılan 60). Doğrulama ekranında tüm SMC sıcaklık anahtarları ve düğmeyle HID çapraz kontrolü (#7).
 
 ## [0.2.0] - 2026-11-09
 
