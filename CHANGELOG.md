@@ -14,6 +14,7 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
 
 ### Değişti
 - Süreç: issue'su olmayan geliştirme yapılmaz; dal adları issue numarası içerir (#16).
+- Süreç: Dependabot PR'ları için issue otomatik açılır ve PR'a bağlanır (#18).
 - `--snapshot` bayrağı artık sekme adı alır: `system`, `io`, `battery`, `verify`.
 
 ## [0.1.0] - 2026-11-09
