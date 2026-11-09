@@ -50,9 +50,11 @@ final class PanelModel {
     var gpuSourceTitle = ""
     var temperature: TemperatureSnapshot?
     var temperatureStatus: UnofficialStatus = .unknown
-    var temperatureInterval = TemperatureSettings.load() {
-        didSet { TemperatureSettings.save(temperatureInterval) }
+    var sensorInterval = SensorSettings.load() {
+        didSet { SensorSettings.save(sensorInterval) }
     }
+    var fans: FanSnapshot?
+    var fanStatus: UnofficialStatus = .unknown
     var hidTemperatures: [HIDTemperature.Reading]?
     var hidStatus: UnofficialStatus = .unknown
 

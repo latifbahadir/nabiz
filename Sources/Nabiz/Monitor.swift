@@ -60,8 +60,8 @@ final class Monitor {
     private let networkSampler = NetworkSampler()
     private let diskSampler = DiskSampler()
     private let gpuSampler = GPUSampler()
-    private let temperatureSampler = TemperatureSampler()
-    private var temperatureInFlight = false
+    private let sensorSampler = SMCSensorSampler()
+    private var sensorsInFlight = false
     private let selfSampler = SelfUsageSampler()
     private var lastCapacityRead: TimeInterval = -.infinity
     private var history = RingBuffer<HistoryPoint>(capacity: historyCapacity)
@@ -109,38 +109,42 @@ final class Monitor {
         panel.gpuStatus = gpuSampler.gate.status
     }
 
-    /// Sıcaklık yalnızca panel açıkken ve `temperatureInterval` sn'de bir okunur (varsayılan 60).
+    /// Sıcaklık ve fan (SMC) yalnızca panel açıkken ve `sensorInterval` sn'de bir okunur (varsayılan 60).
     /// Panel açılınca son okuma eskiyse hemen; Doğrulama sekmesinde tüm anahtarlar gerekirse hemen.
-    private func refreshTemperatureIfDue() {
-        guard panelVisible, !temperatureInFlight else { return }
+    private func refreshSensorsIfDue() {
+        guard panelVisible, !sensorsInFlight else { return }
         let wantsAll = panel.tab == .verify
         let age = panel.temperature.map { Date().timeIntervalSince($0.date) } ?? .infinity
         let needsAll = wantsAll && panel.temperature?.includesAll != true
-        guard age >= Double(panel.temperatureInterval) || needsAll else { return }
-        temperatureInFlight = true
-        temperatureSampler.sample(includeAll: wantsAll) { [weak self] snapshot, status in
+        guard age >= Double(panel.sensorInterval) || needsAll else { return }
+        sensorsInFlight = true
+        sensorSampler.sample(includeAll: wantsAll) { [weak self] reading in
             guard let self else { return }
-            temperatureInFlight = false
-            panel.temperatureStatus = status
+            sensorsInFlight = false
+            panel.temperatureStatus = reading.temperatureStatus
             // Okunamadıysa eski değer gösterilmez; yine de yeniden deneme sıklığı korunur.
-            panel.temperature = snapshot ?? TemperatureSnapshot(date: Date(), cpu: nil, gpu: nil, readings: [], includesAll: wantsAll)
+            panel.temperature = reading.temperature
+                ?? TemperatureSnapshot(date: Date(), cpu: nil, gpu: nil, readings: [], includesAll: wantsAll)
+            panel.fans = reading.fans
+            panel.fanStatus = reading.fanStatus
         }
     }
 
     /// Doğrulama ekranındaki çapraz kontrol düğmesi için (pahalı, yalnızca istenince).
     func readHIDTemperatures() {
-        temperatureSampler.readHID { [weak self] readings, status in
+        sensorSampler.readHID { [weak self] readings, status in
             self?.panel.hidTemperatures = readings
             self?.panel.hidStatus = status
         }
     }
 
     func retryTemperature() {
-        temperatureSampler.retryAfterCrash { [weak self] status in
+        sensorSampler.retryAfterCrash { [weak self] status in
             guard let self else { return }
             panel.temperatureStatus = status
             panel.temperature = nil
-            refreshTemperatureIfDue()
+            panel.fans = nil
+            refreshSensorsIfDue()
         }
     }
 
@@ -195,6 +199,6 @@ final class Monitor {
         if panel.hasBattery {
             panel.battery = BatterySampler.sample()
         }
-        refreshTemperatureIfDue()
+        refreshSensorsIfDue()
     }
 }

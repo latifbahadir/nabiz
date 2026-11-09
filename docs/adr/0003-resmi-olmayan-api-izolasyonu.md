@@ -42,7 +42,7 @@ aşağıdaki kurallarla:
      nedenini gösterir. İşaret macOS derlemesini ve Nabız sürümünü taşır; biri değişince kaynak yeniden denenir.
 4. **Şeffaflık:** Her kaynağın durumu (`kullanılabilir` / `okunamadı: neden`) ve ham değerleri Doğrulama ekranında
    gösterilir; kullanıcı değeri bir sistem aracıyla karşılaştırabilir (`ioreg`, `powermetrics`, Activity Monitor).
-5. **Maliyet:** Sıcaklık ve fan yalnızca panel açıkken okunur (sıcaklık varsayılan 60 sn'de bir, değiştirilebilir). GPU, geçmiş grafiği için sürekli okunabilir; ancak
+5. **Maliyet:** Sıcaklık ve fan yalnızca panel açıkken okunur (ikisi birlikte, varsayılan 60 sn'de bir, değiştirilebilir). GPU, geçmiş grafiği için sürekli okunabilir; ancak
    yalnızca ölçülen maliyeti bütçeye sığarsa (#6'daki karar).
 6. **Yalnızca okuma:** Fan denetimi, SMC'ye yazma (yazma komutu hiç gönderilmez) ve yönetici (root) yetkisi gerektiren hiçbir şey yapılmaz.
 
