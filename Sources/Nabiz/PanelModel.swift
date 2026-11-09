@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 enum PanelTab: Hashable {
-    case overview, verify
+    case system, io, battery, verify
 }
 
 enum HistoryRange: Double, CaseIterable, Identifiable {
@@ -32,18 +32,25 @@ struct ChartPoint: Identifiable {
 final class PanelModel {
     let topology: CPUTopology
     let interval: TimeInterval
+    let hasBattery: Bool
 
     var cpu: CPUSnapshot?
     var memory: MemorySnapshot?
     var history: [HistoryPoint] = []
     var selfUsage: SelfUsage?
+    var network: NetworkSnapshot?
+    var primaryInterface: String?
+    var diskIO: DiskIOSnapshot?
+    var diskCapacity: DiskCapacity?
+    var battery: BatterySnapshot?
 
-    var tab: PanelTab = .overview
+    var tab: PanelTab = .system
     var range: HistoryRange = .fiveMinutes
 
-    init(topology: CPUTopology, interval: TimeInterval) {
+    init(topology: CPUTopology, interval: TimeInterval, hasBattery: Bool) {
         self.topology = topology
         self.interval = interval
+        self.hasBattery = hasBattery
     }
 
     /// Seçili aralıktaki noktalar; grafik maliyetini sınırlamak için en fazla

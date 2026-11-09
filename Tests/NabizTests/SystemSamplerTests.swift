@@ -40,3 +40,38 @@ struct SystemSamplerTests {
         #expect(usage.averageCPU >= 0)
     }
 }
+
+@Suite("Sistem örnekleyicileri — ağ, disk, pil")
+struct Phase2SystemTests {
+    @Test("Ağ: sayaçlar okunur, ikinci okuma negatif olmayan hız verir")
+    func network() async throws {
+        let sampler = NetworkSampler()
+        #expect(sampler.sample() == nil)
+        try await Task.sleep(for: .milliseconds(200))
+        let snapshot = try #require(sampler.sample())
+        #expect(!snapshot.counters.isEmpty)
+        #expect(snapshot.counters.keys.allSatisfy(NetworkSampler.isCounted))
+        #expect(snapshot.download >= 0 && snapshot.upload >= 0)
+    }
+
+    @Test("Disk: G/Ç ve doluluk makul")
+    func disk() async throws {
+        let sampler = DiskSampler()
+        #expect(sampler.sampleIO() == nil)
+        try await Task.sleep(for: .milliseconds(200))
+        let io = try #require(sampler.sampleIO())
+        #expect(io.driverCount > 0)
+        #expect(io.totals.read > 0)
+
+        let capacity = try #require(DiskSampler.capacity())
+        #expect(capacity.total > 0)
+        #expect(capacity.used > 0 && capacity.used <= capacity.total)
+    }
+
+    @Test("Pil: varsa değerler aralıkta")
+    func battery() throws {
+        guard let battery = BatterySampler.sample() else { return } // masaüstü Mac / CI
+        #expect((0...100).contains(battery.percent))
+        if let health = battery.health { #expect(health > 0 && health <= 1) }
+    }
+}
