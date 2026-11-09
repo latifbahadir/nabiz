@@ -16,7 +16,7 @@ struct BatteryTab: View {
                     InfoRow("Sağlık", battery.health.map { Fmt.percent($0) } ?? "—")
                     InfoRow("Döngü sayısı", battery.cycleCount.map(String.init) ?? "—")
                     InfoRow("Güç", battery.watts.map(powerText) ?? "—")
-                    InfoRow("Sıcaklık", battery.temperatureCelsius.map { Fmt.number($0, digits: 1) + " °C" } ?? "—")
+                    InfoRow("Sıcaklık", battery.temperatureCelsius.map { Fmt.celsius($0) } ?? "—")
                     InfoRow("Tam şarj kapasitesi", battery.nominalCapacity.map { "\(Fmt.integer(UInt64($0))) mAh" } ?? "—")
                     InfoRow("Tasarım kapasitesi", battery.designCapacity.map { "\(Fmt.integer(UInt64($0))) mAh" } ?? "—")
                 }

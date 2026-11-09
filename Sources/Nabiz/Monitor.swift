@@ -60,6 +60,8 @@ final class Monitor {
     private let networkSampler = NetworkSampler()
     private let diskSampler = DiskSampler()
     private let gpuSampler = GPUSampler()
+    private let temperatureSampler = TemperatureSampler()
+    private var temperatureInFlight = false
     private let selfSampler = SelfUsageSampler()
     private var lastCapacityRead: TimeInterval = -.infinity
     private var history = RingBuffer<HistoryPoint>(capacity: historyCapacity)
@@ -105,6 +107,41 @@ final class Monitor {
     func retryGPU() {
         gpuSampler.gate.retryAfterCrash()
         panel.gpuStatus = gpuSampler.gate.status
+    }
+
+    /// Sıcaklık yalnızca panel açıkken ve `temperatureInterval` sn'de bir okunur (varsayılan 60).
+    /// Panel açılınca son okuma eskiyse hemen; Doğrulama sekmesinde tüm anahtarlar gerekirse hemen.
+    private func refreshTemperatureIfDue() {
+        guard panelVisible, !temperatureInFlight else { return }
+        let wantsAll = panel.tab == .verify
+        let age = panel.temperature.map { Date().timeIntervalSince($0.date) } ?? .infinity
+        let needsAll = wantsAll && panel.temperature?.includesAll != true
+        guard age >= Double(panel.temperatureInterval) || needsAll else { return }
+        temperatureInFlight = true
+        temperatureSampler.sample(includeAll: wantsAll) { [weak self] snapshot, status in
+            guard let self else { return }
+            temperatureInFlight = false
+            panel.temperatureStatus = status
+            // Okunamadıysa eski değer gösterilmez; yine de yeniden deneme sıklığı korunur.
+            panel.temperature = snapshot ?? TemperatureSnapshot(date: Date(), cpu: nil, gpu: nil, readings: [], includesAll: wantsAll)
+        }
+    }
+
+    /// Doğrulama ekranındaki çapraz kontrol düğmesi için (pahalı, yalnızca istenince).
+    func readHIDTemperatures() {
+        temperatureSampler.readHID { [weak self] readings, status in
+            self?.panel.hidTemperatures = readings
+            self?.panel.hidStatus = status
+        }
+    }
+
+    func retryTemperature() {
+        temperatureSampler.retryAfterCrash { [weak self] status in
+            guard let self else { return }
+            panel.temperatureStatus = status
+            panel.temperature = nil
+            refreshTemperatureIfDue()
+        }
     }
 
     /// Doğrulama ekranı için: vm_stat'ı çalıştırır ve hemen ardından kendi ölçümünü alır.
@@ -158,5 +195,6 @@ final class Monitor {
         if panel.hasBattery {
             panel.battery = BatterySampler.sample()
         }
+        refreshTemperatureIfDue()
     }
 }

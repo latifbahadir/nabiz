@@ -11,6 +11,8 @@ struct SystemTab: View {
             Divider()
             GPUSection(model: model)
             Divider()
+            TemperatureSection(model: model)
+            Divider()
             MemorySection(model: model)
         }
     }
@@ -112,6 +114,66 @@ private struct GPUSection: View {
         if let memory = gpu.inUseMemory { parts.append("Bellek \(Fmt.bytes(memory))") }
         if let cores = model.gpuInfo?.coreCount { parts.append("\(cores) çekirdek") }
         return parts.joined(separator: " · ")
+    }
+}
+
+// MARK: - Sıcaklık
+
+private struct TemperatureSection: View {
+    @Bindable var model: PanelModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            SectionHeader(title: "Sıcaklık", symbol: "thermometer.medium", value: headline)
+
+            if let t = model.temperature, t.cpu != nil || t.gpu != nil {
+                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 3) {
+                    row("İşlemci", t.cpu)
+                    row("GPU", t.gpu)
+                }
+                .font(.caption)
+            } else if case .unavailable = model.temperatureStatus {
+                Label("Okunamadı — ayrıntı Doğrulama sekmesinde", systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack {
+                Text(ageText)
+                Spacer()
+                Picker("Okuma sıklığı", selection: $model.temperatureInterval) {
+                    ForEach(TemperatureSettings.choices, id: \.self) { Text("\($0) sn").tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.mini)
+                .frame(width: 130)
+                .help("Sıcaklık yalnızca panel açıkken bu sıklıkla okunur")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var headline: String? {
+        guard let t = model.temperature else { return nil }
+        let parts = [t.cpu.map { "CPU \(Fmt.number($0.maximum, digits: 0))°" }, t.gpu.map { "GPU \(Fmt.number($0.maximum, digits: 0))°" }]
+            .compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    private var ageText: String {
+        guard let date = model.temperature?.date else { return "Okunuyor…" }
+        let seconds = max(Int(Date().timeIntervalSince(date)), 0)
+        return seconds < 2 ? "Az önce okundu" : "\(seconds) sn önce okundu"
+    }
+
+    private func row(_ label: String, _ stats: TemperatureStats?) -> some View {
+        GridRow {
+            Text(label).foregroundStyle(.secondary)
+            Text(stats.map { "en yüksek \(Fmt.celsius($0.maximum))" } ?? "—").monospacedDigit()
+            Text(stats.map { "ort. \(Fmt.celsius($0.average)) · \($0.count) sensör" } ?? "").monospacedDigit().foregroundStyle(.secondary)
+        }
     }
 }
 
