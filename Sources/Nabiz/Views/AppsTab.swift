@@ -36,17 +36,11 @@ struct AppsTab: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    TopList(model: model, metric: model.processMetric, limit: 12, expandable: true)
-                    if model.processMetric == .energy {
-                        Divider()
-                        EnergyLedgerSection(model: model, limit: 10)
-                    }
-                }
-                .padding(.trailing, 10)
+            TopList(model: model, metric: model.processMetric, limit: 12, expandable: true)
+            if model.processMetric == .energy {
+                Divider()
+                EnergyLedgerSection(model: model, limit: 10)
             }
-            .frame(height: 470)
 
             footer
         }

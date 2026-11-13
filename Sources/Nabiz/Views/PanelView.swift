@@ -4,6 +4,17 @@ import SwiftUI
 struct PanelView: View {
     @Bindable var model: PanelModel
     let monitor: Monitor
+    /// Sekme içeriğinin en fazla yüksekliği; aşarsa içerik kaydırılır (panel ekrandan taşmasın).
+    /// `nil`: kaydırma yok (PNG'ye çizerken; ImageRenderer ScrollView çizmez).
+    var maxContentHeight: CGFloat?
+
+    @State private var contentHeight: CGFloat = 0
+
+    /// Panelin sığacağı ekran: başlık, sekmeler, alt satır ve ok için pay bırakılır.
+    static func maxContentHeight(for screen: NSScreen?) -> CGFloat {
+        let available = (screen ?? NSScreen.main)?.visibleFrame.height ?? 800
+        return max(available - 230, 300)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -23,12 +34,18 @@ struct PanelView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            switch model.tab {
-            case .system: SystemTab(model: model)
-            case .apps: AppsTab(model: model)
-            case .io: IOTab(model: model)
-            case .battery: BatteryTab(model: model)
-            case .verify: VerificationView(model: model, monitor: monitor)
+            if let maxContentHeight {
+                ScrollView(.vertical) {
+                    tabContent
+                        .background(GeometryReader { geo in
+                            Color.clear.preference(key: ContentHeightKey.self, value: geo.size.height)
+                        })
+                }
+                .id(model.tab) // sekme değişince en üstten başla
+                .onPreferenceChange(ContentHeightKey.self) { contentHeight = $0 }
+                .frame(height: min(max(contentHeight, 1), maxContentHeight))
+            } else {
+                tabContent
             }
 
             Divider()
@@ -47,6 +64,21 @@ struct PanelView: View {
         .padding(14)
         .frame(width: 360)
     }
+
+    @ViewBuilder private var tabContent: some View {
+        switch model.tab {
+        case .system: SystemTab(model: model)
+        case .apps: AppsTab(model: model)
+        case .io: IOTab(model: model)
+        case .battery: BatteryTab(model: model)
+        case .verify: VerificationView(model: model, monitor: monitor)
+        }
+    }
+}
+
+private struct ContentHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
 private struct LaunchAtLoginRow: View {

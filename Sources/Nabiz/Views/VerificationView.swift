@@ -13,34 +13,30 @@ struct VerificationView: View {
     @State private var comparisonFailed = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                selfUsage
+        VStack(alignment: .leading, spacing: 14) {
+            selfUsage
+            Divider()
+            cpu
+            Divider()
+            gpu
+            Divider()
+            temperature
+            Divider()
+            fans
+            Divider()
+            memory
+            Divider()
+            processes
+            Divider()
+            network
+            Divider()
+            disk
+            if model.hasBattery {
                 Divider()
-                cpu
-                Divider()
-                gpu
-                Divider()
-                temperature
-                Divider()
-                fans
-                Divider()
-                memory
-                Divider()
-                processes
-                Divider()
-                network
-                Divider()
-                disk
-                if model.hasBattery {
-                    Divider()
-                    battery
-                }
+                battery
             }
-            .font(.caption)
-            .padding(.trailing, 10) // kaydırma çubuğu için
         }
-        .frame(height: 560)
+        .font(.caption)
     }
 
     // MARK: İşlemler
