@@ -63,6 +63,12 @@ final class Monitor {
     private let sensorSampler = SMCSensorSampler()
     private var sensorsInFlight = false
     private let selfSampler = SelfUsageSampler()
+    private let processSampler = ProcessSampler()
+    private let gpuProcessSampler = GPUProcessSampler()
+    private var energyLedger = EnergyLedger()
+    private var ticksSinceProcessScan = 0
+    /// Panel kapalıyken enerji defteri için işlem taraması sıklığı (tik): 30 × 2 sn = 60 sn.
+    static let backgroundProcessScanTicks = 30
     private var lastCapacityRead: TimeInterval = -.infinity
     private var history = RingBuffer<HistoryPoint>(capacity: historyCapacity)
     private var timer: Timer?
@@ -99,7 +105,13 @@ final class Monitor {
         if visible {
             // Kullanıcı Sistem Ayarları'ndan değiştirmiş olabilir; panel her açıldığında okunur.
             panel.launchAtLogin = LaunchAtLogin.current()
+            scanProcesses()
             publish()
+        } else {
+            // İşlem listesi ve ikonlar panel kapalıyken bellekte tutulmaz.
+            panel.processes = nil
+            gpuProcessSampler.reset()
+            AppIconCache.shared.removeAll()
         }
     }
 
@@ -161,6 +173,10 @@ final class Monitor {
         latestDiskIO = diskSampler.sampleIO()
         // Ham değerler (string üretimi) yalnızca panel açıkken.
         latestGPU = gpuSampler.sample(includeRaw: panelVisible)
+        ticksSinceProcessScan += 1
+        if panelVisible || ticksSinceProcessScan >= Self.backgroundProcessScanTicks {
+            scanProcesses()
+        }
         if let cpu = latestCPU, let memory = latestMemory {
             history.append(HistoryPoint(
                 date: Date(),
@@ -175,6 +191,22 @@ final class Monitor {
         }
         onTick?()
         if panelVisible { publish() }
+    }
+
+    /// İşlemleri tarar ve enerji defterine yazar; panel açıksa uygulama listesini de üretir.
+    private func scanProcesses() {
+        ticksSinceProcessScan = 0
+        let scan = processSampler.scan()
+        if let seconds = scan.interval {
+            energyLedger.add(scan.energyByGroup, seconds: seconds, onBattery: PowerSource.isOnBattery(), at: scan.date)
+        }
+        guard panelVisible else { return }
+        let gpu = gpuProcessSampler.sample()
+        panel.processes = processSampler.snapshot(from: scan, gpu: gpu)
+        panel.processGroups = processSampler.groups
+        panel.energyLedger = energyLedger
+        panel.gpuProcessStatus = gpuProcessSampler.gate.status
+        panel.gpuProcessSourceTitle = gpuProcessSampler.gate.title
     }
 
     private func publish() {

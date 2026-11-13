@@ -15,7 +15,8 @@ hesaplama formülünü ve sistem araçlarıyla yan yana karşılaştırmayı gö
 | Ağ hızı (indirme / yükleme) | `sysctl NET_RT_IFLIST2` (64 bit sayaçlar) | ✅ v0.2 |
 | Disk doluluğu ve okuma/yazma hızı | `URLResourceValues`, IOKit `IOBlockStorageDriver` | ✅ v0.2 |
 | Pil (yüzde, kalan süre, sağlık, döngü, güç, sıcaklık) | `IOPowerSources`, IOKit `AppleSmartBattery` | ✅ v0.2 |
-| GPU, sıcaklık, fan | IOKit / SMC (resmi olmayan) | 🗓 v0.3 |
+| GPU, sıcaklık, fan | IOKit / SMC (resmi olmayan) | ✅ v0.3 |
+| Uygulama/servis bazında CPU, bellek, GPU, enerji, disk; pili en çok harcayanlar | `proc_pid_rusage`, IOKit `AGXDeviceUserClient` (GPU, resmi olmayan) | ✅ v0.3 |
 
 Yol haritası ve görevler: [Issues](../../issues) ve [Milestones](../../milestones).
 

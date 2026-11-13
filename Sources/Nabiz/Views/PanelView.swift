@@ -15,6 +15,7 @@ struct PanelView: View {
 
             Picker("Görünüm", selection: $model.tab) {
                 Text("Sistem").tag(PanelTab.system)
+                Text("Uygulamalar").tag(PanelTab.apps)
                 Text("Ağ · Disk").tag(PanelTab.io)
                 if model.hasBattery { Text("Pil").tag(PanelTab.battery) }
                 Text("Doğrulama").tag(PanelTab.verify)
@@ -24,6 +25,7 @@ struct PanelView: View {
 
             switch model.tab {
             case .system: SystemTab(model: model)
+            case .apps: AppsTab(model: model)
             case .io: IOTab(model: model)
             case .battery: BatteryTab(model: model)
             case .verify: VerificationView(model: model, monitor: monitor)

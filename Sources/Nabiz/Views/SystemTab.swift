@@ -25,7 +25,7 @@ struct SystemTab: View {
 // MARK: - İşlemci
 
 private struct CPUSection: View {
-    let model: PanelModel
+    @Bindable var model: PanelModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -63,6 +63,8 @@ private struct CPUSection: View {
                         .help("Yük ortalaması: son 1, 5 ve 15 dakika")
                 }
             }
+
+            TopSummary(model: model, metric: .cpu)
         }
     }
 }
@@ -91,7 +93,7 @@ private struct CoreBar: View {
 // MARK: - GPU
 
 private struct GPUSection: View {
-    let model: PanelModel
+    @Bindable var model: PanelModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -108,6 +110,8 @@ private struct GPUSection: View {
             }
 
             HistoryChart(points: model.chartPoints(\.gpu), range: model.range, tint: .purple)
+
+            TopSummary(model: model, metric: .gpu)
         }
     }
 
@@ -215,7 +219,7 @@ private struct FanSection: View {
 // MARK: - Bellek
 
 private struct MemorySection: View {
-    let model: PanelModel
+    @Bindable var model: PanelModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -250,6 +254,8 @@ private struct MemorySection: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
+
+            TopSummary(model: model, metric: .memory)
         }
     }
 }
