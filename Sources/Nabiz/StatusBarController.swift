@@ -67,7 +67,11 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             popover.performClose(sender)
             return
         }
-        let host = NSHostingController(rootView: PanelView(model: monitor.panel, monitor: monitor))
+        let host = NSHostingController(rootView: PanelView(
+            model: monitor.panel,
+            monitor: monitor,
+            maxContentHeight: PanelView.maxContentHeight(for: sender.window?.screen)
+        ))
         host.sizingOptions = .preferredContentSize
         popover.contentViewController = host
         monitor.setPanelVisible(true)

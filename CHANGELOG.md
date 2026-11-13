@@ -16,6 +16,14 @@ Biçim [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/), sürümleme
   (5 / 15 / 60 sn, varsayılan 60). Doğrulama ekranında tüm SMC sıcaklık anahtarları ve düğmeyle HID çapraz kontrolü (#7).
 - Fan: her fan için anlık devir ve en yüksek devre oranı, SMC'den (yalnızca okuma); sıcaklıkla aynı sıklıkta,
   yalnızca panel açıkken. Fansız Mac'lerde bölüm gizlenir. Doğrulama ekranında ham `FNum`/`F*Ac`/`Tg`/`Mn`/`Mx` (#8).
+- Uygulamalar sekmesi: CPU, bellek, GPU, enerji ve disk G/Ç'yi **kimin** kullandığı; işlemler uygulamaya göre
+  gruplanır (ör. Chrome yardımcıları → Google Chrome), satır açılınca işlemler görünür; tür etiketi
+  (Uygulama / Arka plan uygulaması / Sistem servisi / Diğer işlem). Kaynak: `proc_pid_rusage` (#30).
+- Pili en çok harcayanlar: işlem enerji sayaçlarından uygulama başına enerji defteri (son 1 / 12 sa,
+  yalnızca pildeyken filtresi); panel kapalıyken dakikada bir güncellenir. Pil ve Uygulamalar sekmelerinde (#30).
+- Sistem sekmesinde CPU, GPU ve bellek için "En çok kullananlar" özeti; root işlemlerinin CPU payı toplamdan
+  hesaplanıp ayrı gösterilir (#30).
+- İşlem başına GPU süresi (`AGXDeviceUserClient` → `AppUsage`, resmi olmayan, `UnofficialGate` arkasında) (#30).
 
 ## [0.2.0] - 2026-11-09
 

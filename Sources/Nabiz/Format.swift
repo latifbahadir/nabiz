@@ -56,6 +56,20 @@ enum Fmt {
         return hours > 0 ? "\(hours) sa \(rest) dk" : "\(rest) dk"
     }
 
+    /// 0.0042 → "4 mW", 1.25 → "1,3 W"
+    static func power(_ watts: Double) -> String {
+        let value = max(watts, 0)
+        if value < 1 { return number(value * 1000, digits: 0) + " mW" }
+        return number(value, digits: value >= 10 ? 0 : 1) + " W"
+    }
+
+    /// Enerji: J → "12 mWh", "1,4 Wh" (1 Wh = 3600 J).
+    static func energy(_ joules: Double) -> String {
+        let wh = max(joules, 0) / 3600
+        if wh < 1 { return number(wh * 1000, digits: wh * 1000 < 10 ? 1 : 0) + " mWh" }
+        return number(wh, digits: wh >= 10 ? 0 : 1) + " Wh"
+    }
+
     /// İkili birimler (1 GB = 1024³ bayt), Activity Monitor ile aynı.
     static func bytes(_ bytes: UInt64) -> String {
         let value = Double(bytes)

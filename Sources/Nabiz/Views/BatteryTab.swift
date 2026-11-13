@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BatteryTab: View {
-    let model: PanelModel
+    @Bindable var model: PanelModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -24,6 +24,9 @@ struct BatteryTab: View {
             } else {
                 Text("Pil bilgisi okunamadı.").foregroundStyle(.secondary)
             }
+
+            Divider()
+            EnergyLedgerSection(model: model, limit: 6)
         }
     }
 

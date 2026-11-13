@@ -13,32 +13,64 @@ struct VerificationView: View {
     @State private var comparisonFailed = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                selfUsage
+        VStack(alignment: .leading, spacing: 14) {
+            selfUsage
+            Divider()
+            cpu
+            Divider()
+            gpu
+            Divider()
+            temperature
+            Divider()
+            fans
+            Divider()
+            memory
+            Divider()
+            processes
+            Divider()
+            network
+            Divider()
+            disk
+            if model.hasBattery {
                 Divider()
-                cpu
-                Divider()
-                gpu
-                Divider()
-                temperature
-                Divider()
-                fans
-                Divider()
-                memory
-                Divider()
-                network
-                Divider()
-                disk
-                if model.hasBattery {
-                    Divider()
-                    battery
-                }
+                battery
             }
-            .font(.caption)
-            .padding(.trailing, 10) // kaydırma çubuğu için
         }
-        .frame(height: 560)
+        .font(.caption)
+    }
+
+    // MARK: İşlemler
+
+    private var processes: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Uygulamalar — kaynak ve formül", systemImage: "list.bullet.rectangle").font(.headline)
+            Text("Kaynak: proc_listallpids + proc_pid_rusage(RUSAGE_INFO_V6), resmi API. Gruplama: proc_pidpath'teki en dıştaki .app paketi (ör. Chrome yardımcıları → Google Chrome); paket yoksa çalıştırılabilir dosya.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("CPU = Δ(ri_user_time + ri_system_time) × timebase / Δt (çekirdek) · Bellek = ri_phys_footprint · Güç = Δri_energy_nj / Δt · Disk = Δ(ri_diskio_bytesread + byteswritten) / Δt · Uyanma = Δ(ri_interrupt_wkups + ri_pkg_idle_wkups) / Δt")
+                .monospaced()
+                .fixedSize(horizontal: false, vertical: true)
+            if let p = model.processes {
+                Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 3) {
+                    row("Okunan işlem", String(p.readableCount))
+                    row("Yetki gerektiren işlem", String(p.restrictedCount))
+                    row("Uygulama / servis grubu", String(p.apps.count))
+                    row("Okunanların CPU toplamı", Fmt.percent(p.totalCPU, digits: 1))
+                    row("Yetki gerektirenler (toplamdan)", model.restrictedCPU.map { Fmt.percent($0, digits: 1) } ?? "—")
+                    row("Ölçüm aralığı", p.interval.map { Fmt.number($0, digits: 2) + " sn" } ?? "—")
+                }
+                .monospacedDigit()
+            }
+            Text("Root işlemlerinin (kernel_task, WindowServer…) sayaçları yetkisiz okunamaz; CPU payları sistem toplamından çıkarılarak gösterilir. Enerji defteri panel kapalıyken dakikada bir güncellenir; iki tarama arasında başlayıp biten işlemler kaçabilir. Enerji, macOS'un işlem başına tahminidir (Activity Monitor “Enerji Etkisi” ayrı, gizli bir formüldür).")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("İşlem başına GPU: IOKit \(model.gpuProcessSourceTitle) (belgelenmemiş). Oran = Δ accumulatedGPUTime (ns) / Δt.")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            UnofficialStatusLabel(status: model.gpuProcessStatus)
+            CommandRow(note: "CPU ve bellek için karşılaştırma (ikinci örneğe bakın):", command: "top -l 2 -s 2 -o cpu -n 10 -stats pid,command,cpu,mem")
+            CommandRow(note: "İşlem başına GPU süresi (ham):", command: "ioreg -r -c AGXDeviceUserClient -l | grep -E 'IOUserClientCreator|accumulatedGPUTime'")
+        }
     }
 
     // MARK: Ağ

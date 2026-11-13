@@ -3,7 +3,7 @@ import NabizUnofficial
 import Observation
 
 enum PanelTab: Hashable {
-    case system, io, battery, verify
+    case system, apps, io, battery, verify
 }
 
 enum HistoryRange: Double, CaseIterable, Identifiable {
@@ -58,6 +58,16 @@ final class PanelModel {
     var hidTemperatures: [HIDTemperature.Reading]?
     var hidStatus: UnofficialStatus = .unknown
 
+    var processes: ProcessSnapshot?
+    var processGroups: [String: ProcessGroupInfo] = [:]
+    var processMetric: ProcessMetric = .cpu
+    var expandedApps: Set<String> = []
+    var energyLedger = EnergyLedger()
+    var energyRange: EnergyRange = .hour
+    var energyBatteryOnly = false
+    var gpuProcessStatus: UnofficialStatus = .unknown
+    var gpuProcessSourceTitle = ""
+
     var launchAtLogin = LaunchAtLogin.State(enabled: false, message: nil, needsApproval: false)
 
     var tab: PanelTab = .system
@@ -67,6 +77,23 @@ final class PanelModel {
         self.topology = topology
         self.interval = interval
         self.hasBattery = hasBattery
+    }
+
+    /// Seçili aralıkta en çok enerji harcayanlar.
+    func energySummary(limit: Int) -> EnergyLedger.Summary {
+        energyLedger.summary(
+            since: Date().addingTimeInterval(-energyRange.rawValue),
+            batteryOnly: energyBatteryOnly,
+            limit: limit
+        )
+    }
+
+    /// Okunamayan (yetki gerektiren) işlemlerin CPU'su: sistem toplamı − okunabilen işlemlerin toplamı (çekirdek).
+    var restrictedCPU: Double? {
+        // İki ölçüm aynı pencereyi kapsamalı: panel yeni açıldıysa işlem aralığı uzun olabilir.
+        guard let cpu, let processes, let seconds = processes.interval, seconds < interval * 2 else { return nil }
+        let total = cpu.total * Double(cpu.cores.count)
+        return max(total - processes.totalCPU, 0)
     }
 
     /// Seçili aralıktaki noktalar; grafik maliyetini sınırlamak için en fazla
